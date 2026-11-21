@@ -357,7 +357,7 @@ return <div className="shell">
 <p className="muted">Saved in this browser. Reset below to restore the original demo workspace.</p>
 <form onSubmit={e=>{e.preventDefault();if(draft.trim()){setName(draft.trim());msg('Profile updated.')}}}>
 <label>Display name<input value={draft} required maxLength={40} onChange={e=>setDraft(e.target.value)}/></label>
-<Button>Save changes</Button>
+<Button type="submit">Save changes</Button>
 </form>
 <Button variant="outline" onClick={()=>{try{localStorage.clear()}catch{};location.reload()}}>Reset demo workspace</Button>
 </section>}

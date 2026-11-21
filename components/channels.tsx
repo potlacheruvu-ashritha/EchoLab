@@ -99,7 +99,7 @@ export function Calendar({posts,setPosts,clips,held}:{posts:Post[],setPosts:Disp
         <label>Status<select value={form.status} onChange={e=>setForm({...form,status:e.target.value as Post['status']})}>
           {(['Draft','Awaiting claim approval','Approved','Scheduled'] as const).map(s=><option key={s} disabled={held&&form.clip===4&&['Approved','Scheduled'].includes(s)}>{s}</option>)}
         </select></label>
-        <Button>Save post</Button>
+        <Button type="submit">Save post</Button>
       </form>
     </Modal>}
   </>

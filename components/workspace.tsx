@@ -60,6 +60,37 @@ const [name,setName]=useState('Ananya Rao')
 const [draft,setDraft]=useState(name)
 const [version,refresh]=useState(0)
 
+// Workspace state survives a reload. Clearing it restores the seeded demo.
+const STORAGE_KEY='echolab.workspace.v2'
+const [hydrated,setHydrated]=useState(false)
+
+useEffect(()=>{
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY)
+    if(raw){
+      const s=JSON.parse(raw)
+      if(Array.isArray(s.clips)&&s.clips.length)setClips(s.clips)
+      if(Array.isArray(s.posts))setPosts(s.posts)
+      if(Array.isArray(s.claims))setClaims(s.claims)
+      if(Array.isArray(s.rules))setRules(s.rules)
+      if(Array.isArray(s.skippedSegments))setSkippedSegments(s.skippedSegments)
+      if(Array.isArray(s.glossary))setGlossary(s.glossary)
+      if(Array.isArray(s.transcript))setTranscript(s.transcript)
+      if(typeof s.episodeTitle==='string')setEpisodeTitle(s.episodeTitle)
+      if(typeof s.episodeLanguage==='string')setEpisodeLanguage(s.episodeLanguage)
+      if(typeof s.name==='string'){setName(s.name);setDraft(s.name)}
+    }
+  }catch{}
+  setHydrated(true)
+},[])
+
+useEffect(()=>{
+  if(!hydrated)return
+  try{
+    localStorage.setItem(STORAGE_KEY,JSON.stringify({clips,posts,claims,rules,skippedSegments,glossary,transcript,episodeTitle,episodeLanguage,name}))
+  }catch{}
+},[hydrated,clips,posts,claims,rules,skippedSegments,glossary,transcript,episodeTitle,episodeLanguage,name])
+
 const held=claims.some(c=>c.status==='Held for review')
 
 useEffect(()=>{
@@ -257,7 +288,9 @@ setPosts(newPosts)
 setAsset({name:file.name,url:URL.createObjectURL(file)})
 setUpload(false)
 go('Video Studio')
-msg(`Analysis complete for "${epTitle}". ${generated.length} clips with multimodal proof cards ready!`)
+msg(result.demo_mode
+  ? `Demo analysis for "${epTitle}" — Gemini was unavailable, so this is a sample result. ${generated.length} clips loaded.`
+  : `Analysis complete for "${epTitle}". ${generated.length} clips with multimodal proof cards ready!`)
 }
 
 function nav(p:PageName){
@@ -321,11 +354,12 @@ return <div className="shell">
 {page==='Claim Firewall'&&<Firewall claims={claims} clips={clips} approveClaim={approveClaim} editClaim={editClaim}/>}
 {page==='Settings'&&<section className="panel padded narrow">
 <h2>Creator profile</h2>
-<p className="muted">Changes apply to this session only.</p>
+<p className="muted">Saved in this browser. Reset below to restore the original demo workspace.</p>
 <form onSubmit={e=>{e.preventDefault();if(draft.trim()){setName(draft.trim());msg('Profile updated.')}}}>
 <label>Display name<input value={draft} required maxLength={40} onChange={e=>setDraft(e.target.value)}/></label>
 <Button>Save changes</Button>
 </form>
+<Button variant="outline" onClick={()=>{try{localStorage.clear()}catch{};location.reload()}}>Reset demo workspace</Button>
 </section>}
 <footer><AudioLines size={14}/> EchoLab Studio <span>/</span> Multilingual content workspace with adaptive brand memory</footer>
 </main>

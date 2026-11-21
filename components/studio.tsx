@@ -2,6 +2,7 @@ import {useRef,useEffect,useState,Dispatch,SetStateAction} from 'react'
 import {Button} from './ui/button'
 import {Wave,Pill} from './overview'
 import {Clip,Rule,SkippedSegment,GlossaryItem} from '@/lib/episode'
+import {API_BASE} from '@/lib/api'
 import {X,ArrowUpRight,ShieldAlert,Headphones,Check,Dna,Upload,Volume2,Eye,Sparkles,AlertTriangle,Languages,BookOpen,Sparkle} from 'lucide-react'
 
 type TranscriptLine = {
@@ -282,7 +283,7 @@ export function UploadForm({save}:{save:(f:File,result:any)=>void}){
       const data=new FormData()
       data.append('file',file)
       setProgress('Analyzing video audio, visual frames, speech, and claims...')
-      const res=await fetch('http://localhost:8000/api/analyze',{
+      const res=await fetch(`${API_BASE}/api/analyze`,{
         method:'POST',
         body:data
       })
@@ -317,7 +318,7 @@ export function UploadForm({save}:{save:(f:File,result:any)=>void}){
     </Button>
     {loading&&<>
       <p className="muted" style={{fontWeight:600,color:'var(--teal)'}}>{progress}</p>
-      <p className="muted">Video multimodal processing may take 15–45 seconds. Keep this window open.</p>
+      <p className="muted">Gemini processes the whole file, so expect 20–60 seconds for a short clip and several minutes for a long one. Keep this window open.</p>
     </>}
     {error&&<p className="warning">{error}</p>}
   </>

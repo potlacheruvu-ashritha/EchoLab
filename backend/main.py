@@ -20,11 +20,20 @@ app = FastAPI()
 # Active models on the Google GenAI API
 CANDIDATE_MODELS = ["gemini-3.5-flash", "gemini-3.7-flash", "gemini-3.8-flash"]
 
+# Comma-separated list; defaults to the local Next dev server.
+ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000"
+    ).split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -35,6 +44,17 @@ client = genai.Client(api_key=api_key) if api_key else None
 @app.get("/")
 def home():
     return {"status": "EchoLab backend running", "models": CANDIDATE_MODELS}
+
+
+@app.get("/health")
+def health():
+    """Readiness probe: reports whether real AI analysis will run or fall back."""
+    return {
+        "status": "ok",
+        "ai": "configured" if client else "demo",
+        "models": CANDIDATE_MODELS,
+        "allowed_origins": ALLOWED_ORIGINS,
+    }
 
 
 def clean_json_response(raw_text: str) -> dict:

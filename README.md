@@ -75,7 +75,12 @@ cp ../.env.example .env          # then add your GEMINI_API_KEY
 uvicorn main:app --reload --port 8000
 ```
 
-Health check: `curl http://localhost:8000/` → `{"status":"EchoLab backend running","models":[...]}`
+Health checks:
+
+```bash
+curl http://localhost:8000/        # {"status":"EchoLab backend running","models":[...]}
+curl http://localhost:8000/health  # {"status":"ok","ai":"configured"|"demo",...}
+```
 
 Interactive API docs: <http://localhost:8000/docs>
 
@@ -90,7 +95,9 @@ npm run dev
 
 Open <http://localhost:3000>. The UI is preloaded with a worked example ("Chai with the Founder") so it's fully explorable before you upload anything.
 
-> **Without a Gemini key** the backend still works: `/api/analyze` returns a shaped demo payload with `demo_mode: true`. The UI does not branch on this — it's there so the response is honest about its origin.
+> **Without a Gemini key** the backend still works: `/api/analyze` returns a shaped demo payload with `demo_mode: true`, and the UI says so in its completion message rather than presenting the sample as a real analysis.
+
+If the backend is not on `localhost:8000`, create `.env.local` in the project root with `NEXT_PUBLIC_API_BASE=https://your-api-host` and restart `npm run dev`.
 
 ## API
 
@@ -120,6 +127,24 @@ Returns a single object:
 }
 ```
 
+### Configuration
+
+| Variable | Where | Default | Purpose |
+|---|---|---|---|
+| `GEMINI_API_KEY` | `backend/.env` | — | Enables real video analysis |
+| `ALLOWED_ORIGINS` | `backend/.env` | `http://localhost:3000,http://127.0.0.1:3000` | CORS allow-list, comma-separated |
+| `NEXT_PUBLIC_API_BASE` | `.env.local` | `http://localhost:8000` | Backend origin the UI calls |
+
+## Tests
+
+```bash
+cd backend
+.venv/Scripts/python.exe -m pip install -r requirements-dev.txt
+.venv/Scripts/python.exe -m pytest -q
+```
+
+Covers the health and root probes, JSON repair for fenced/prose-wrapped model output, the exact fallback payload shape the frontend maps, and the claim-status vocabulary.
+
 ## Demo script (2 minutes)
 
 1. **Overview** — the episode is processed; point at the held claim in the stats row.
@@ -132,12 +157,11 @@ Returns a single object:
 
 - **Frontend** — Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS v4, Base UI, lucide-react
 - **Backend** — FastAPI, Uvicorn, `google-genai` (Gemini 3.x Flash video understanding)
-- **No database** — workspace state is in the client for this build; the backend is stateless
+- **No database** — the backend is stateless; workspace state is persisted in browser `localStorage`
 
 ## Known limitations
 
-- The frontend calls the API at `http://localhost:8000` (`components/studio.tsx`). Point it at a hosted backend and this needs to move to an env var.
-- Workspace state (claim decisions, calendar slots) is in-memory only and resets on reload.
+- No server-side persistence: the workspace (claim decisions, calendar slots, brand rules) is kept in `localStorage` in the browser. It survives a reload but is per-browser and per-device; there are no accounts.
 - Video analysis is real but slow: Gemini processing can take minutes on a long file. Use a short clip for a live demo.
 - CORS is wide open (`*`), which is fine for local development and not for a public deployment.
 

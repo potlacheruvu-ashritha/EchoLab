@@ -436,17 +436,23 @@ async def analyze_video(file: UploadFile = File(...)):
 
     suffix = os.path.splitext(file.filename)[1] or ".mp4"
     temp_path = None
+    size = 0
 
     try:
+        # Stream to disk in 1 MB chunks so the video never sits in RAM
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp:
             temp_path = temp.name
-            content = await file.read()
-            temp.write(content)
+            while True:
+                chunk = await file.read(1024 * 1024)
+                if not chunk:
+                    break
+                size += len(chunk)
+                temp.write(chunk)
 
-        if not content:
+        if size == 0:
             raise HTTPException(status_code=400, detail="Uploaded file is empty")
 
-        print(f"Received video '{file.filename}' ({len(content)} bytes). Starting analysis...")
+        print(f"Received video '{file.filename}' ({size} bytes). Starting analysis...")
 
         if client:
             try:
@@ -458,7 +464,6 @@ async def analyze_video(file: UploadFile = File(...)):
             except Exception as error:
                 print(f"Gemini video analysis encountered an error: {error}")
                 print(f"Generating contextual video adaptation for '{file.filename}'...")
-
         else:
             print("Gemini API client not initialized. Generating video adaptation...")
 
